@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:yelb/data/workout_data.dart';
-import 'models/workout.dart';
-import 'pages/homePage.dart';
+import 'package:yelb/models/workout.dart';
+import 'pages/home_page.dart';
 
-void main() {
+void main() async {
+  await Hive.initFlutter();
+  Hive.registerAdapter(WorkoutAdapter());
+  await Hive.openBox<Workout>("WorkoutsDB");
   runApp(MyApp());
 }
 
@@ -18,18 +22,14 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Yelb',
         theme: ThemeData(
-          useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(seedColor: Color.fromARGB(255, 16, 78, 34)),
-          primaryTextTheme: TextTheme(
-            displayLarge: TextStyle(
-              color: Colors.green,
-            )
-          )
-        ),
+            useMaterial3: true,
+            colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueGrey),
+            primaryTextTheme: TextTheme(
+                displayLarge: TextStyle(
+              color: Colors.white,
+            ))),
         home: HomePage(),
       ),
     );
   }
 }
-
-
