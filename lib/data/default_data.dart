@@ -28,6 +28,7 @@ enum ExerciseName {
   shoulder('Shoulder Press'),
   lateralRaise('Lateral Raises'),
   tricepsPulldown('Triceps pulldown'),
+  tricepsPullover('Triceps pullover'),
   skullCrushers('Skull Crushers'),
   dips('Dips'),
   row('Row'),
