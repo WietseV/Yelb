@@ -24,6 +24,7 @@ enum WorkoutLocation {
 enum ExerciseName {
   bench('Bench Press'),
   inclinedBench('Inclined Bench Press'),
+  chestFly('Chest Flies'),
   shoulder('Shoulder Press'),
   lateralRaise('Lateral Raises'),
   tricepsPulldown('Triceps pulldown'),
@@ -33,11 +34,17 @@ enum ExerciseName {
   lateralPull('Lateral Pull-down'),
   delt('Rear delts'),
   pullUp('Pull-ups'),
+  pushUp('Push-ups'),
+  burpee('Burpee'),
+  crunches('Crunches'),
+  legRaises('Leg Raises'),
+  sitUp('Sit-ups'),
   bicepscurl('Biceps Curl'),
   squat('Squats'),
   deadlift('Deadlift'),
   romanian('Romanian Deadlift'),
   legCurl('Leg Curls'),
+  legPress('Leg Press'),
   calfPress('Calf press');
 
   const ExerciseName(this.name);

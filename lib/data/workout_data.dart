@@ -10,10 +10,6 @@ class WorkoutData extends ChangeNotifier {
 
   final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
 
-  // List<Workout> getWorkouts() {
-  //   return workoutsDB.toMap().entries.map((e) => e.value).toList();
-  // }
-
   void addWorkout(String type, String location) {
     DateTime date = DateTime.now();
     String key = type + dateFormat.format(date).toString();
