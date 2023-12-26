@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:yelb/data/workout_data.dart';
-import 'package:yelb/models/workout.dart';
 import 'pages/home_page.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
 void main() async {
-  await Hive.initFlutter();
-  Hive.registerAdapter(WorkoutAdapter());
-  await Hive.openBox<Workout>("WorkoutsDB");
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(MyApp());
 }
 

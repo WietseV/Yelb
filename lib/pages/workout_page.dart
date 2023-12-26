@@ -29,7 +29,7 @@ class _WorkoutPageState extends State<WorkoutPage> {
   final hourFormat = DateFormat('HH:mm');
 
   _WorkoutPageState(Workout workout) {
-    for (int i = 0; i < workout.exercises.length; i++) {
+    for (int i = 0; i < workout.exercises!.length; i++) {
       if (i == 0) {
         show.add(true);
       } else {
@@ -244,7 +244,7 @@ class _WorkoutPageState extends State<WorkoutPage> {
           onPressed: createNewExercise,
           child: Icon(Icons.add),
         ),
-        body: widget.workout.exercises.isEmpty
+        body: widget.workout.exercises!.isEmpty
             ? Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -262,7 +262,7 @@ class _WorkoutPageState extends State<WorkoutPage> {
             : ListView.builder(
                 itemCount: value
                     .getWorkout(widget.workout.type, widget.workout.date)
-                    .exercises
+                    .exercises!
                     .length,
                 itemBuilder: (context, index) => Card(
                   color: Colors.blueGrey[100],
@@ -287,7 +287,7 @@ class _WorkoutPageState extends State<WorkoutPage> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              "(${value.getWorkout(widget.workout.type, widget.workout.date).exercises[index].type}) ${value.getWorkout(widget.workout.type, widget.workout.date).exercises[index].name}",
+                              "(${value.getWorkout(widget.workout.type, widget.workout.date).exercises?[index].type}) ${value.getWorkout(widget.workout.type, widget.workout.date).exercises![index].name}",
                             ),
                             Icon(show[index]
                                 ? Icons.arrow_drop_up_outlined
@@ -319,9 +319,9 @@ class _WorkoutPageState extends State<WorkoutPage> {
                               itemCount: value
                                   .getWorkout(
                                       widget.workout.type, widget.workout.date)
-                                  .exercises[index]
+                                  .exercises![index]
                                   .sets
-                                  .length,
+                                  !.length,
                               itemBuilder: (context, index2) => ListTile(
                                 titleAlignment: ListTileTitleAlignment.center,
                                 dense: true,
@@ -330,7 +330,7 @@ class _WorkoutPageState extends State<WorkoutPage> {
                                 contentPadding:
                                     EdgeInsets.fromLTRB(10, 0, 0, 0),
                                 subtitle: Text(
-                                    "${value.getWorkout(widget.workout.type, widget.workout.date).exercises[index].sets[index2].reps}  ${value.getWorkout(widget.workout.type, widget.workout.date).exercises[index].type == "Bodyweight" ? "" : "x ${value.getWorkout(widget.workout.type, widget.workout.date).exercises[index].sets[index2].weight.toString()} kg"}"),
+                                    "${value.getWorkout(widget.workout.type, widget.workout.date).exercises![index].sets![index2].reps}  ${value.getWorkout(widget.workout.type, widget.workout.date).exercises![index].type == "Bodyweight" ? "" : "x ${value.getWorkout(widget.workout.type, widget.workout.date).exercises![index].sets![index2].weight.toString()} kg"}"),
                               ),
                             ),
                           ),
@@ -340,12 +340,12 @@ class _WorkoutPageState extends State<WorkoutPage> {
                                   value
                                       .getWorkout(widget.workout.type,
                                           widget.workout.date)
-                                      .exercises[index]
+                                      .exercises![index]
                                       .name,
                                   value
                                       .getWorkout(widget.workout.type,
                                           widget.workout.date)
-                                      .exercises[index]
+                                      .exercises![index]
                                       .type),
                               style: TextButton.styleFrom(
                                   minimumSize: const Size.fromHeight(30)),

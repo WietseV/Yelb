@@ -141,7 +141,7 @@ class _HomePageState extends State<HomePage> {
           onPressed: createNewWorkout,
           child: Icon(Icons.add),
         ),
-        body: value.workoutsDB.isEmpty
+        body: value.db.collection("workouts").count() == 0
             ? Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -157,12 +157,12 @@ class _HomePageState extends State<HomePage> {
                 ],
               )
             : ListView.builder(
-                itemCount: value.workoutsDB.length,
+                itemCount: value.db.collection("workouts").count() as int,
                 itemBuilder: (context, index) => Card(
                   color: Colors.blueGrey[200],
                   child: TextButton(
                     onPressed: () => goToWorkoutPage(
-                        (value.workoutsDB.getAt(index) as Workout).type,
+                        (value.db.collection("workouts").get() as Workout).type,
                         (value.workoutsDB.getAt(index) as Workout).date),
                     child: Slidable(
                       endActionPane:
