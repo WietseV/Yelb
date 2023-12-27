@@ -8,19 +8,17 @@ import 'package:intl/intl.dart';
 class WorkoutData extends ChangeNotifier {
   final db = FirebaseFirestore.instance.collection('workouts');
 
-  final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
+  final dateFormat = DateFormat('dd-MM-yyyy HH:mm');
 
 
   Future<void> addWorkout (String type, String location) async {
     DateTime date = DateTime.now();
     String key = type + dateFormat.format(date).toString();
     Workout workout = Workout(type: type, location: location, date: date, exercises: []);
-    // workoutsDB.put(key, workout);
-    final docRef = db.withConverter(
-      fromFirestore: Workout.fromFirestore,
-      toFirestore: (Workout workout, options) => workout.toFirestore(),
-    ).doc(key);
-    await docRef.set(workout);
+
+    DocumentReference docSnap = db.doc(key);
+    print(key);
+    docSnap.set({"WorkoutType": type, "WorkoutLocation": location, "WorkoutDate": date, "Exercises": []});
 
     notifyListeners();
   }
@@ -57,13 +55,13 @@ class WorkoutData extends ChangeNotifier {
 
   Workout getWorkout(String type, DateTime date) {
     String key = type + dateFormat.format(date);
-    final ref = db.doc(key).withConverter(
-      fromFirestore: Workout.fromFirestore,
-      toFirestore: (Workout workout, _) => workout.toFirestore(),
-    );
-    final docSnap = ref.get().then((DocumentSnapshot doc) { final data = doc.data() as Map<String, dynamic>;}
-    );
-    return docSnap as Workout;
+    final ref = db.doc(key);
+    ref.collection("WorkoutType");
+    Workout workout = Workout(type: ref.toString(),
+      location: ref.collection("WorkoutLocation").toString(),
+      date: DateTime.now(),
+      exercises: []);
+    return workout;
     // return workoutsDB.get(type + dateFormat.format(date).toString()) as Workout;
   }
 
@@ -79,8 +77,10 @@ class WorkoutData extends ChangeNotifier {
     //     (exercise) => exercise.name == name && exercise.type == type);
   }
 
-  void deleteWorkout(Workout workout) {
+  void deleteWorkout(String workoutKey) {
     // workout.delete();
+    final docSnap = db.doc(workoutKey);
+    docSnap.delete();
     notifyListeners();
   }
 

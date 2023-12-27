@@ -25,7 +25,7 @@ class _HomePageState extends State<HomePage> {
   bool isWorkoutType = true;
   bool isWorkoutLocation = true;
 
-  final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
+  final dateFormat = DateFormat('dd-MM-yyyy HH:mm');
 
   void createNewWorkout() {
     final List<DropdownMenuEntry<WorkoutType>> workoutTypeEntries =
@@ -112,8 +112,8 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void delete(Workout workout) {
-    Provider.of<WorkoutData>(context, listen: false).deleteWorkout(workout);
+  void delete(String workoutKey) {
+    Provider.of<WorkoutData>(context, listen: false).deleteWorkout(workoutKey);
   }
 
   void cancel() {
@@ -174,7 +174,7 @@ class _HomePageState extends State<HomePage> {
                             goToWorkoutPage(
                               snapshot.data!.docs[index].get("WorkoutType"),
                                 // (value.workoutsDB.getAt(index) as Workout).date),
-                                snapshot.data!.docs[index].get('WorkoutDate')),
+                                snapshot.data!.docs[index].get('WorkoutDate').toDate()),
                                 // DateTime.now()),
                         child: Slidable(
 
@@ -186,9 +186,7 @@ class _HomePageState extends State<HomePage> {
                               const Color.fromARGB(255, 104, 23, 17),
                               foregroundColor: Colors.white,
                               onPressed: (context) =>
-                                  delete(
-                                    // (value.workoutsDB.getAt(index) as Workout)),
-                                      value.getWorkout(snapshot.data!.docs[index].toString(), DateTime.now())),
+                                  delete(snapshot.data!.docs[index].get("WorkoutType") + dateFormat.format(snapshot.data!.docs[index].get("WorkoutDate").toDate())),
                               icon: Icons.delete,
                               label: "delete",
                             )

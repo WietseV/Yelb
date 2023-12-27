@@ -28,9 +28,8 @@ class _LoginPageState extends State<LoginPage> {
                   top: 180,
                   left: 60,
                   right: 60,
-                  bottom: 60,
+                  bottom: 30,
                 ),
-                clipBehavior: Clip.antiAlias,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topRight,
@@ -47,16 +46,24 @@ class _LoginPageState extends State<LoginPage> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Text(
-                            'Y.E.L.B.',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 40,
-                              fontFamily: 'Inter',
-                              fontWeight: FontWeight.w400,
-                              height: 0,
+                          ShaderMask(
+                            shaderCallback: (Rect bounds) {
+                              return LinearGradient(
+                                begin: Alignment.bottomCenter,
+                                end: Alignment.topCenter,
+                                colors: [Colors.transparent, Color(0xFF1E1E1E)],
+                              ).createShader(bounds);
+                            },
+                            child: Text(
+                              'Y.E.L.B.',
+                              style: TextStyle(
+                                color: Colors.white38,
+                                fontSize: 48,
+                                fontFamily: 'Inter',
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
-                          ),
+                          )
                         ],
                       ),
                     ),
@@ -77,7 +84,7 @@ class _LoginPageState extends State<LoginPage> {
                             child: Container(
                               width: 95,
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 28, vertical: 9),
+                                  horizontal: 28, vertical: 8),
                               clipBehavior: Clip.antiAlias,
                               decoration: ShapeDecoration(
                                 color: Color(0xFFD9D9D9),
@@ -93,7 +100,6 @@ class _LoginPageState extends State<LoginPage> {
                                 ],
                               ),
                               child: Row(
-                                mainAxisSize: MainAxisSize.min,
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
@@ -101,7 +107,7 @@ class _LoginPageState extends State<LoginPage> {
                                     'Log In',
                                     style: TextStyle(
                                       color: Color(0xFF342D2D),
-                                      fontSize: 15,
+                                      fontSize: 14,
                                       fontFamily: 'Inter',
                                       fontWeight: FontWeight.w400,
                                     ),
@@ -116,7 +122,7 @@ class _LoginPageState extends State<LoginPage> {
                             child: Container(
                               width: 95,
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 23, vertical: 9),
+                                  horizontal: 23, vertical: 8),
                               clipBehavior: Clip.antiAlias,
                               decoration: ShapeDecoration(
                                 color: Color(0xFFD9D9D9),
@@ -132,7 +138,6 @@ class _LoginPageState extends State<LoginPage> {
                                 ],
                               ),
                               child: Row(
-                                mainAxisSize: MainAxisSize.min,
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
@@ -140,7 +145,7 @@ class _LoginPageState extends State<LoginPage> {
                                     'Sign In',
                                     style: TextStyle(
                                       color: Color(0xFF342D2D),
-                                      fontSize: 15,
+                                      fontSize: 14,
                                       fontFamily: 'Inter',
                                       fontWeight: FontWeight.w400,
                                     ),
@@ -152,20 +157,17 @@ class _LoginPageState extends State<LoginPage> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 101),
                     TextButton(
                       onPressed: () => goToHomePage(),
-                      child:
-                    Text(
-                      'Continue without an account',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
-                        fontFamily: 'Inter',
-                        fontWeight: FontWeight.w400,
-                        height: 0,
+                      child: Text(
+                        'Continue without an account',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontFamily: 'Inter',
+                          fontWeight: FontWeight.w400,
+                        ),
                       ),
-                    ),
                     )
                   ],
                 ),
