@@ -141,54 +141,74 @@ class _HomePageState extends State<HomePage> {
           onPressed: createNewWorkout,
           child: Icon(Icons.add),
         ),
-        body: value.db.collection("workouts").count() == 0
-            ? Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        "Add a workout",
-                        style: TextStyle(color: Colors.grey[600], fontSize: 30),
-                      ),
-                    ],
-                  ),
-                ],
-              )
-            : ListView.builder(
-                itemCount: value.db.collection("workouts").count() as int,
-                itemBuilder: (context, index) => Card(
-                  color: Colors.blueGrey[200],
-                  child: TextButton(
-                    onPressed: () => goToWorkoutPage(
-                        (value.db.collection("workouts").get() as Workout).type,
-                        (value.workoutsDB.getAt(index) as Workout).date),
-                    child: Slidable(
-                      endActionPane:
+        body:
+        StreamBuilder(
+            stream: value.db.snapshots(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return (
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              "Add a workout",
+                              style: TextStyle(color: Colors.grey[600],
+                                  fontSize: 30),
+                            ),
+                          ],
+                        ),
+                      ],
+                    )
+                );
+              }
+              return ListView.builder(
+                itemCount: snapshot.data!.size,
+                itemBuilder: (context, index) =>
+                    Card(
+                      color: Colors.blueGrey[200],
+                      child: TextButton(
+                        onPressed: () =>
+                            goToWorkoutPage(
+                              snapshot.data!.docs[index].get("WorkoutType"),
+                                // (value.workoutsDB.getAt(index) as Workout).date),
+                                snapshot.data!.docs[index].get('WorkoutDate')),
+                                // DateTime.now()),
+                        child: Slidable(
+
+                          endActionPane:
                           ActionPane(motion: BehindMotion(), children: [
-                        SlidableAction(
-                          padding: EdgeInsets.all(0),
-                          backgroundColor:
+                            SlidableAction(
+                              padding: EdgeInsets.all(0),
+                              backgroundColor:
                               const Color.fromARGB(255, 104, 23, 17),
-                          foregroundColor: Colors.white,
-                          onPressed: (context) => delete(
-                              (value.workoutsDB.getAt(index) as Workout)),
-                          icon: Icons.delete,
-                          label: "delete",
-                        )
-                      ]),
-                      child: ListTile(
-                          title: Text(
-                              (value.workoutsDB.getAt(index) as Workout).type),
-                          subtitle: Text(
-                              "${(value.workoutsDB.getAt(index) as Workout).location} - ${(value.workoutsDB.getAt(index) as Workout).date.isToday() ? "Today" : (value.workoutsDB.getAt(index) as Workout).date.isYesterday() ? "Yesterday" : dateFormat.format((value.workoutsDB.getAt(index) as Workout).date)}"),
-                          trailing: Icon(Icons.arrow_forward)),
+                              foregroundColor: Colors.white,
+                              onPressed: (context) =>
+                                  delete(
+                                    // (value.workoutsDB.getAt(index) as Workout)),
+                                      value.getWorkout(snapshot.data!.docs[index].toString(), DateTime.now())),
+                              icon: Icons.delete,
+                              label: "delete",
+                            )
+                          ]),
+                          child: ListTile(
+                              title: Text(
+                                  (snapshot.data!.docs[index].get("WorkoutType"))),
+                              subtitle: Text(
+                                  "${snapshot.data!.docs[index].get("WorkoutLocation")} - ${DateTime.now().isToday()
+                                      ? "Today"
+                                      : (DateTime.now().isYesterday()
+                                      ? "Yesterday"
+                                      : dateFormat.format(snapshot.data!.docs[index].get("WorkoutDate")))}"),
+                              trailing: Icon(Icons.arrow_forward)),
+                        ),
+                      ),
                     ),
-                  ),
+              );
+            }),
                 ),
-              ),
-      ),
     );
   }
 }

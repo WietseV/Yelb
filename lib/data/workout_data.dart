@@ -6,7 +6,7 @@ import 'package:yelb/models/set.dart';
 import 'package:intl/intl.dart';
 
 class WorkoutData extends ChangeNotifier {
-  final db = FirebaseFirestore.instance;
+  final db = FirebaseFirestore.instance.collection('workouts');
 
   final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
 
@@ -16,7 +16,7 @@ class WorkoutData extends ChangeNotifier {
     String key = type + dateFormat.format(date).toString();
     Workout workout = Workout(type: type, location: location, date: date, exercises: []);
     // workoutsDB.put(key, workout);
-    final docRef = db.collection("workouts").withConverter(
+    final docRef = db.withConverter(
       fromFirestore: Workout.fromFirestore,
       toFirestore: (Workout workout, options) => workout.toFirestore(),
     ).doc(key);
@@ -37,7 +37,7 @@ class WorkoutData extends ChangeNotifier {
     //     ?.exercises
     //     .toString();
     notifyListeners();
-  final exerciseRef = db.collection("workouts").doc(key);
+  final exerciseRef = db.doc(key);
   exerciseRef.update({"exercises": FieldValue.arrayUnion([exercise]),
   });
   }
@@ -57,7 +57,7 @@ class WorkoutData extends ChangeNotifier {
 
   Workout getWorkout(String type, DateTime date) {
     String key = type + dateFormat.format(date);
-    final ref = db.collection("workouts").doc(key).withConverter(
+    final ref = db.doc(key).withConverter(
       fromFirestore: Workout.fromFirestore,
       toFirestore: (Workout workout, _) => workout.toFirestore(),
     );
@@ -68,7 +68,7 @@ class WorkoutData extends ChangeNotifier {
   }
 
   Exercise getExercise(Workout workout, String name, String type) {
-    final ref = db.collection("workouts").doc().withConverter(
+    final ref = db.doc().withConverter(
       fromFirestore: Exercise.fromFirestore,
       toFirestore: (Exercise exercise, _) => exercise.toFirestore(),
     );
@@ -88,7 +88,7 @@ class WorkoutData extends ChangeNotifier {
     // workout.exercises.remove(getExercise(workout, name, type));
     String key = workout.type + dateFormat.format(workout.date);
     Exercise exercise = getExercise(workout, name, type) as Exercise;
-    final exerciseRef = db.collection("workouts").doc(key);
+    final exerciseRef = db.doc(key);
 
     exerciseRef.update({"exercises": FieldValue.arrayRemove([exercise]),
     });
