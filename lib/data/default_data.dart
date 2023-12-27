@@ -36,7 +36,7 @@ enum ExerciseName {
   delt('Rear delts'),
   pullUp('Pull-ups'),
   pushUp('Push-ups'),
-  burpee('Burpee'),
+  burpees('Burpees'),
   crunches('Crunches'),
   legRaises('Leg Raises'),
   sitUp('Sit-ups'),
