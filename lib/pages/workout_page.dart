@@ -25,7 +25,7 @@ class _WorkoutPageState extends State<WorkoutPage> {
 
   List<bool> show = [];
 
-  final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
+  final dateFormat = DateFormat('dd-MM-yyyy HH:mm');
   final hourFormat = DateFormat('HH:mm');
 
   _WorkoutPageState(Workout workout) {
