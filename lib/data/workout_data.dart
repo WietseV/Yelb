@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:yelb/models/exercise.dart';
 import 'package:yelb/models/workout.dart';
-import 'package:yelb/models/set.dart';
 import 'package:intl/intl.dart';
 
 class WorkoutData extends ChangeNotifier {
@@ -53,14 +53,35 @@ class WorkoutData extends ChangeNotifier {
     notifyListeners();
   }
 
-  Workout getWorkout(String type, DateTime date) {
+  Future<Workout> getWorkout(String type, DateTime date) async {
     String key = type + dateFormat.format(date);
-    final ref = db.doc(key);
-    ref.collection("WorkoutType");
-    Workout workout = Workout(type: ref.toString(),
-      location: ref.collection("WorkoutLocation").toString(),
-      date: DateTime.now(),
-      exercises: []);
+    print(key);
+    final ref = FirebaseDatabase.instance.ref();
+    final snapshot = await ref.child('workouts/$key').get();
+    if (snapshot.exists) {
+      print(snapshot.value);
+    } else {
+      print('No data available.');
+    }
+
+    // var refData = await ref.child("workouts/"+key).get().then((value) => print(value));
+    // print("barf"+ref.toString());
+    // print("hello world!"+refData.value.toString());
+    Workout workout =
+    // Workout(
+    //   type: data.data("WorkoutType"),
+    //   location: data.data("WorkoutLocation"),
+    //   date: data.data("WorkoutDate").toDate(),
+    //   exercises: data.data("Exercises"));
+    Workout(
+        type: 'test',
+        location: 'test',
+        date: DateTime.now(),
+        exercises: [Exercise(
+          name: 'test',
+          type: 'test',
+          sets: []
+    )]);
     return workout;
     // return workoutsDB.get(type + dateFormat.format(date).toString()) as Workout;
   }

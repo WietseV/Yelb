@@ -7,6 +7,8 @@ import 'package:yelb/data/workout_data.dart';
 import 'package:yelb/models/workout.dart';
 import 'package:yelb/utility/date_helpers.dart';
 
+import '../main.dart';
+
 class WorkoutPage extends StatefulWidget {
   final Workout workout;
   const WorkoutPage({super.key, required this.workout});
@@ -20,6 +22,8 @@ class _WorkoutPageState extends State<WorkoutPage> {
   int decimal = 0;
   int reps = 0;
 
+  var workoutInApp;
+
   ExerciseName? exerciseName;
   ExerciseType? exerciseType;
 
@@ -29,6 +33,7 @@ class _WorkoutPageState extends State<WorkoutPage> {
   final hourFormat = DateFormat('HH:mm');
 
   _WorkoutPageState(Workout workout) {
+    workoutInApp = workout;
     for (int i = 0; i < workout.exercises!.length; i++) {
       if (i == 0) {
         show.add(true);
@@ -217,7 +222,6 @@ class _WorkoutPageState extends State<WorkoutPage> {
     return Consumer<WorkoutData>(
       builder: (context, value, child) => Scaffold(
         appBar: AppBar(
-          backgroundColor: Colors.blueGrey,
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -244,7 +248,7 @@ class _WorkoutPageState extends State<WorkoutPage> {
           onPressed: createNewExercise,
           child: Icon(Icons.add),
         ),
-        body: widget.workout.exercises!.isEmpty
+        body: ScaffoldWithBackground(child: widget.workout.exercises!.isEmpty
             ? Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -260,10 +264,8 @@ class _WorkoutPageState extends State<WorkoutPage> {
                 ],
               )
             : ListView.builder(
-                itemCount: value
-                    .getWorkout(widget.workout.type, widget.workout.date)
-                    .exercises!
-                    .length,
+                itemCount: workoutInApp.exercises?.length,
+
                 itemBuilder: (context, index) => Card(
                   color: Colors.blueGrey[100],
                   child: ListTile(
@@ -287,7 +289,7 @@ class _WorkoutPageState extends State<WorkoutPage> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              "(${value.getWorkout(widget.workout.type, widget.workout.date).exercises?[index].type}) ${value.getWorkout(widget.workout.type, widget.workout.date).exercises![index].name}",
+                              "(${workoutInApp.exercises?[index].type}) ${workoutInApp.exercises![index].name}",
                             ),
                             Icon(show[index]
                                 ? Icons.arrow_drop_up_outlined
@@ -316,10 +318,7 @@ class _WorkoutPageState extends State<WorkoutPage> {
                             child: ListView.builder(
                               shrinkWrap: true,
                               physics: NeverScrollableScrollPhysics(),
-                              itemCount: value
-                                  .getWorkout(
-                                      widget.workout.type, widget.workout.date)
-                                  .exercises![index]
+                              itemCount: workoutInApp.exercises![index]
                                   .sets
                                   !.length,
                               itemBuilder: (context, index2) => ListTile(
@@ -330,21 +329,17 @@ class _WorkoutPageState extends State<WorkoutPage> {
                                 contentPadding:
                                     EdgeInsets.fromLTRB(10, 0, 0, 0),
                                 subtitle: Text(
-                                    "${value.getWorkout(widget.workout.type, widget.workout.date).exercises![index].sets![index2].reps}  ${value.getWorkout(widget.workout.type, widget.workout.date).exercises![index].type == "Bodyweight" ? "" : "x ${value.getWorkout(widget.workout.type, widget.workout.date).exercises![index].sets![index2].weight.toString()} kg"}"),
+                                    "${workoutInApp.exercises![index].sets![index2].reps}  ${workoutInApp.exercises![index].type == "Bodyweight" ? "" : "x ${workoutInApp.exercises![index].sets![index2].weight.toString()} kg"}"),
                               ),
                             ),
                           ),
                           Card(
                             child: TextButton(
                               onPressed: () => createNewSet(
-                                  value
-                                      .getWorkout(widget.workout.type,
-                                          widget.workout.date)
+                                  workoutInApp
                                       .exercises![index]
                                       .name,
-                                  value
-                                      .getWorkout(widget.workout.type,
-                                          widget.workout.date)
+                                  workoutInApp
                                       .exercises![index]
                                       .type),
                               style: TextButton.styleFrom(
@@ -358,7 +353,7 @@ class _WorkoutPageState extends State<WorkoutPage> {
                   ),
                 ),
               ),
-      ),
+      ),)
     );
   }
 }
