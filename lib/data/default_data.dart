@@ -1,11 +1,9 @@
 enum WorkoutType {
   push('Push'),
   pull('Pull'),
-  arms('Arms'),
-  chest('Chest'),
-  shoulders('Shoulders'),
-  abs('Abs'),
-  back('Back'),
+  upper('Upper'),
+  fullbody('Full Body'),
+  stabilization('Stabilization'),
   legs('Legs');
 
   const WorkoutType(this.type);
@@ -13,7 +11,7 @@ enum WorkoutType {
 }
 
 enum WorkoutLocation {
-  fitness('Fitness Workout'),
+  gym('Gym Workout'),
   home('Home Workout'),
   outdoor('Outdoor Workout');
 

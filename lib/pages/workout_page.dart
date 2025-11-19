@@ -1,359 +1,474 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
-import 'package:numberpicker/numberpicker.dart';
-import 'package:provider/provider.dart';
 import 'package:yelb/data/default_data.dart';
-import 'package:yelb/data/workout_data.dart';
-import 'package:yelb/models/workout.dart';
-import 'package:yelb/utility/date_helpers.dart';
-
 import '../main.dart';
 
 class WorkoutPage extends StatefulWidget {
-  final Workout workout;
-  const WorkoutPage({super.key, required this.workout});
+  final String workoutId;
+  final String workoutType;
+
+  const WorkoutPage({
+    super.key,
+    required this.workoutId,
+    required this.workoutType,
+  });
 
   @override
-  State<WorkoutPage> createState() => _WorkoutPageState(workout);
+  State<WorkoutPage> createState() => _WorkoutPageState();
 }
 
 class _WorkoutPageState extends State<WorkoutPage> {
-  int integer = 0;
-  int decimal = 0;
-  int reps = 0;
-
-  var workoutInApp;
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
 
   ExerciseName? exerciseName;
   ExerciseType? exerciseType;
 
-  List<bool> show = [];
-
   final dateFormat = DateFormat('dd-MM-yyyy HH:mm');
-  final hourFormat = DateFormat('HH:mm');
 
-  _WorkoutPageState(Workout workout) {
-    workoutInApp = workout;
-    for (int i = 0; i < workout.exercises!.length; i++) {
-      if (i == 0) {
-        show.add(true);
-      } else {
-        show.add(false);
-      }
-    }
+  // ---------------------- ADD/EDIT EXERCISE ----------------------
+  void _showExerciseDialog(
+      {String? exerciseId, String? currentName, String? currentType}) {
+    exerciseName = currentName != null
+        ? ExerciseName.values.firstWhere((e) => e.name == currentName)
+        : null;
+    exerciseType = currentType != null
+        ? ExerciseType.values.firstWhere((e) => e.type == currentType)
+        : null;
+
+    final exerciseNameEntries = ExerciseName.values
+        .map((e) => DropdownMenuEntry<ExerciseName>(
+              value: e,
+              label: e.name,
+              enabled: e.name.isNotEmpty,
+            ))
+        .toList();
+
+    final exerciseTypeEntries = ExerciseType.values
+        .map((e) => DropdownMenuEntry<ExerciseType>(
+              value: e,
+              label: e.type,
+              enabled: e.type.isNotEmpty,
+            ))
+        .toList();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(exerciseId == null ? "Add Exercise" : "Edit Exercise"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            DropdownMenu<ExerciseName>(
+              width: 200,
+              initialSelection: exerciseName,
+              label: const Text('Exercise Name'),
+              dropdownMenuEntries: exerciseNameEntries,
+              onSelected: (ExerciseName? name) =>
+                  setState(() => exerciseName = name),
+            ),
+            const SizedBox(height: 24),
+            DropdownMenu<ExerciseType>(
+              width: 200,
+              initialSelection: exerciseType,
+              label: const Text('Exercise Type'),
+              dropdownMenuEntries: exerciseTypeEntries,
+              onSelected: (ExerciseType? type) =>
+                  setState(() => exerciseType = type),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx), child: const Text("Cancel")),
+          TextButton(
+            onPressed: () async {
+              if (exerciseName != null && exerciseType != null) {
+                if (exerciseId == null) {
+                  await _db
+                      .collection('workouts')
+                      .doc(widget.workoutId)
+                      .collection('exercises')
+                      .add({
+                    'name': exerciseName!.name,
+                    'type': exerciseType!.type,
+                  });
+                } else {
+                  await _db
+                      .collection('workouts')
+                      .doc(widget.workoutId)
+                      .collection('exercises')
+                      .doc(exerciseId)
+                      .update({
+                    'name': exerciseName!.name,
+                    'type': exerciseType!.type,
+                  });
+                }
+                Navigator.pop(ctx);
+              }
+            },
+            child: const Text("Save"),
+          ),
+        ],
+      ),
+    );
   }
 
-  void createNewSet(String exerciseName, String exerciseType) {
+  // ---------------------- DELETE EXERCISE ----------------------
+  void _deleteExercise(String exerciseId) {
     showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-              title: Text("Add Set"),
-              content: StatefulBuilder(builder: (context, setState) {
-                return Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text("Reps: "),
-                    NumberPicker(
-                        minValue: 0,
-                        maxValue: 20,
-                        axis: Axis.horizontal,
-                        value: reps,
-                        zeroPad: true,
-                        itemWidth: 50,
-                        onChanged: (value) => setState(() {
-                              reps = value;
-                            })),
-                    Visibility(
-                      visible: exerciseType != "Bodyweight",
-                      child: Column(
-                        children: [
-                          Text("Weight: "),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              NumberPicker(
-                                  minValue: 0,
-                                  maxValue: 300,
-                                  itemWidth: 50,
-                                  value: integer,
-                                  onChanged: (value) => setState(() {
-                                        integer = value;
-                                      })),
-                              NumberPicker(
-                                  minValue: 0,
-                                  maxValue: 99,
-                                  step: 25,
-                                  zeroPad: true,
-                                  itemWidth: 50,
-                                  value: decimal,
-                                  onChanged: (value) => setState(() {
-                                        decimal = value;
-                                      })),
-                            ],
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Delete Exercise"),
+        content: const Text(
+            "Are you sure you want to delete this exercise and all its sets?"),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx), child: const Text("Cancel")),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              final sets = await _db
+                  .collection('workouts')
+                  .doc(widget.workoutId)
+                  .collection('exercises')
+                  .doc(exerciseId)
+                  .collection('sets')
+                  .get();
+              for (var s in sets.docs) {
+                await s.reference.delete();
+              }
+              await _db
+                  .collection('workouts')
+                  .doc(widget.workoutId)
+                  .collection('exercises')
+                  .doc(exerciseId)
+                  .delete();
+            },
+            child: const Text("Delete", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // SLIDE-UP ADD/EDIT SET ----------------------
+
+  void _showAddOrEditSetSheet(
+      String exerciseId, String exerciseName, String exerciseType,
+      {String? setId, int? currentReps, double? currentWeight}) async {
+    int selectedReps = currentReps ?? 8;
+    double selectedWeight = currentWeight ?? 0.0;
+
+    if (setId == null && currentReps == null && currentWeight == null) {
+      final lastSetSnapshot = await _db
+          .collection('workouts')
+          .doc(widget.workoutId)
+          .collection('exercises')
+          .doc(exerciseId)
+          .collection('sets')
+          .orderBy('timestamp', descending: true)
+          .limit(1)
+          .get();
+      if (lastSetSnapshot.docs.isNotEmpty) {
+        final last = lastSetSnapshot.docs.first;
+        selectedReps = last['reps'];
+        selectedWeight = last['weight'];
+      }
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+                left: 24,
+                right: 24,
+                top: 16,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    "${setId == null ? "Add" : "Edit"} Set for $exerciseName",
+                    style: const TextStyle(
+                        fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text("Reps",
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  SizedBox(
+                    height: 90,
+                    child: ListWheelScrollView.useDelegate(
+                      physics: const FixedExtentScrollPhysics(),
+                      perspective: 0.004,
+                      diameterRatio: 2,
+                      itemExtent: 40,
+                      onSelectedItemChanged: (v) =>
+                          setState(() => selectedReps = v + 1),
+                      childDelegate: ListWheelChildBuilderDelegate(
+                        builder: (context, index) => Text(
+                          "${index + 1}",
+                          style: TextStyle(
+                            fontSize: index + 1 == selectedReps ? 22 : 18,
+                            color: index + 1 == selectedReps
+                                ? Colors.blueGrey[900]
+                                : Colors.blueGrey[400],
                           ),
-                        ],
+                        ),
+                        childCount: 20,
+                      ),
+                    ),
+                  ),
+                  if (exerciseType != "Bodyweight") ...[
+                    const SizedBox(height: 12),
+                    const Text("Weight (kg)",
+                        style: TextStyle(fontWeight: FontWeight.w600)),
+                    SizedBox(
+                      height: 90,
+                      child: ListWheelScrollView.useDelegate(
+                        physics: const FixedExtentScrollPhysics(),
+                        perspective: 0.004,
+                        diameterRatio: 2,
+                        itemExtent: 40,
+                        onSelectedItemChanged: (v) =>
+                            setState(() => selectedWeight = v * 0.25),
+                        childDelegate: ListWheelChildBuilderDelegate(
+                          builder: (context, index) {
+                            final w = index * 0.25;
+                            final active = (w - selectedWeight).abs() < 0.001;
+                            return Text(
+                              w.toStringAsFixed(2),
+                              style: TextStyle(
+                                fontSize: active ? 22 : 18,
+                                color: active
+                                    ? Colors.blueGrey[900]
+                                    : Colors.blueGrey[400],
+                              ),
+                            );
+                          },
+                          childCount: (300 / 0.25).round() + 1,
+                        ),
                       ),
                     ),
                   ],
-                );
-              }),
-              actions: [
-                MaterialButton(
-                  onPressed: () => saveSet(exerciseName, exerciseType),
-                  child: Text("save"),
-                ),
-                MaterialButton(
-                  onPressed: cancel,
-                  child: Text("cancel"),
-                ),
-              ],
-            ));
-  }
-
-  void createNewExercise() {
-    final List<DropdownMenuEntry<ExerciseName>> exerciseNameEntries =
-        <DropdownMenuEntry<ExerciseName>>[];
-    for (final ExerciseName exerciseName in ExerciseName.values) {
-      exerciseNameEntries.add(
-        DropdownMenuEntry<ExerciseName>(
-            value: exerciseName,
-            label: exerciseName.name,
-            enabled: exerciseName.name != ''),
-      );
-    }
-
-    final List<DropdownMenuEntry<ExerciseType>> exerciseTypeEntries =
-        <DropdownMenuEntry<ExerciseType>>[];
-    for (final ExerciseType exerciseType in ExerciseType.values) {
-      exerciseTypeEntries.add(
-        DropdownMenuEntry<ExerciseType>(
-            value: exerciseType,
-            label: exerciseType.type,
-            enabled: exerciseType.type != ''),
-      );
-    }
-
-    showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-              title: Text("Add Exercise"),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  DropdownMenu<ExerciseName>(
-                    width: 200,
-                    menuHeight: 300,
-                    label: const Text('Exercise Name'),
-                    dropdownMenuEntries: exerciseNameEntries,
-                    onSelected: (ExerciseName? name) {
-                      setState(() {
-                        exerciseName = name;
-                      });
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blueGrey[700],
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      minimumSize: const Size.fromHeight(45),
+                    ),
+                    onPressed: () async {
+                      if (setId == null) {
+                        await _db
+                            .collection('workouts')
+                            .doc(widget.workoutId)
+                            .collection('exercises')
+                            .doc(exerciseId)
+                            .collection('sets')
+                            .add({
+                          'reps': selectedReps,
+                          'weight': exerciseType == "Bodyweight"
+                              ? 69.0
+                              : selectedWeight,
+                          'timestamp': DateTime.now(),
+                        });
+                      } else {
+                        await _db
+                            .collection('workouts')
+                            .doc(widget.workoutId)
+                            .collection('exercises')
+                            .doc(exerciseId)
+                            .collection('sets')
+                            .doc(setId)
+                            .update({
+                          'reps': selectedReps,
+                          'weight': exerciseType == "Bodyweight"
+                              ? 69.0
+                              : selectedWeight,
+                        });
+                      }
+                      Navigator.pop(ctx);
                     },
+                    child: Text(setId == null ? "Save Set" : "Update Set"),
                   ),
-                  SizedBox(
-                    height: 24,
-                  ),
-                  DropdownMenu<ExerciseType>(
-                    label: const Text('Exercise Type'),
-                    dropdownMenuEntries: exerciseTypeEntries,
-                    onSelected: (ExerciseType? type) {
-                      setState(() {
-                        exerciseType = type;
-                      });
-                    },
-                  ),
+                  const SizedBox(height: 12),
                 ],
               ),
-              actions: [
-                MaterialButton(
-                  onPressed: saveExercise,
-                  child: Text("save"),
-                ),
-                MaterialButton(
-                  onPressed: cancel,
-                  child: Text("cancel"),
-                ),
-              ],
-            ));
+            );
+          },
+        );
+      },
+    );
   }
 
-  void saveExercise() {
-    for (int i = 0; i < show.length; i++) {
-      show[i] = false;
-    }
-    show.add(true);
-    String newExerciseName = exerciseName!.name;
-    String newExerciseType = exerciseType!.type;
-    Provider.of<WorkoutData>(context, listen: false).addExercise(
-        widget.workout.type,
-        widget.workout.date,
-        newExerciseName,
-        newExerciseType);
-    Navigator.pop(context);
+  // DELETE SET ----------------------
+  void _deleteSet(String exerciseId, String setId) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Delete Set"),
+        content: const Text("Are you sure you want to delete this set?"),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx), child: const Text("Cancel")),
+          TextButton(
+            onPressed: () async {
+              await _db
+                  .collection('workouts')
+                  .doc(widget.workoutId)
+                  .collection('exercises')
+                  .doc(exerciseId)
+                  .collection('sets')
+                  .doc(setId)
+                  .delete();
+              Navigator.pop(ctx);
+            },
+            child: const Text("Delete", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
   }
 
-  void saveSet(String exerciseName, String exerciseType) {
-    double weight;
-    if (exerciseType == "Bodyweight") {
-      weight = 69.0;
-    } else {
-      weight = double.parse((integer + (decimal / 100)).toString());
-    }
-    double newSetWeight = weight;
-    int newSetReps = reps;
-    Provider.of<WorkoutData>(context, listen: false).addSet(
-        widget.workout.type,
-        widget.workout.date,
-        exerciseName,
-        exerciseType,
-        newSetReps,
-        newSetWeight);
-    Navigator.pop(context);
-  }
-
-  void cancel() {
-    Navigator.pop(context);
-  }
-
+  // BUILD UI ----------------------
   @override
   Widget build(BuildContext context) {
-    return Consumer<WorkoutData>(
-      builder: (context, value, child) => Scaffold(
-        appBar: AppBar(
-          title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Text("${widget.workout.type} - "),
-                  Text(
-                    widget.workout.location,
-                    style: TextStyle(fontSize: 18),
-                  ),
-                ],
-              ),
-              Text(
-                  widget.workout.date.isToday()
-                      ? "today ${hourFormat.format(widget.workout.date)}"
-                      : widget.workout.date.isYesterday()
-                          ? "yesterday ${hourFormat.format(widget.workout.date)}"
-                          : dateFormat.format(widget.workout.date),
-                  style: TextStyle(fontSize: 15)),
-            ],
-          ),
-        ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: createNewExercise,
-          child: Icon(Icons.add),
-        ),
-        body: ScaffoldWithBackground(child: widget.workout.exercises!.isEmpty
-            ? Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+    return Scaffold(
+      appBar: AppBar(title: Text(widget.workoutType), centerTitle: true),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showExerciseDialog(),
+        child: const Icon(Icons.add),
+      ),
+      body: ScaffoldWithBackground(
+        child: StreamBuilder<QuerySnapshot>(
+          stream: _db
+              .collection('workouts')
+              .doc(widget.workoutId)
+              .collection('exercises')
+              .orderBy('name')
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+              return const Center(child: Text("Add an exercise"));
+            }
+
+            final exercises = snapshot.data!.docs;
+            return ListView.builder(
+              itemCount: exercises.length,
+              itemBuilder: (context, index) {
+                final e = exercises[index];
+                final name = e['name'];
+                final type = e['type'];
+
+                return Slidable(
+                  key: ValueKey(e.id),
+                  endActionPane: ActionPane(
+                    motion: const DrawerMotion(),
+                    extentRatio: 0.3,
                     children: [
-                      Text(
-                        "Add an exercise",
-                        style: TextStyle(color: Colors.grey[600], fontSize: 30),
+                      SlidableAction(
+                        onPressed: (context) => _showExerciseDialog(
+                            exerciseId: e.id,
+                            currentName: name,
+                            currentType: type),
+                        backgroundColor: Colors.blueGrey,
+                        foregroundColor: Colors.white,
+                        icon: Icons.edit,
+                        label: 'Edit',
+                      ),
+                      SlidableAction(
+                        onPressed: (context) => _deleteExercise(e.id),
+                        backgroundColor: Colors.red.shade400,
+                        foregroundColor: Colors.white,
+                        icon: Icons.delete,
+                        label: 'Delete',
                       ),
                     ],
                   ),
-                ],
-              )
-            : ListView.builder(
-                itemCount: workoutInApp.exercises?.length,
-
-                itemBuilder: (context, index) => Card(
-                  color: Colors.blueGrey[100],
-                  child: ListTile(
-                    titleAlignment: ListTileTitleAlignment.center,
-                    onTap: () {
-                      setState(() {
-                        if (show[index] == true) {
-                          show[index] = !show[index];
-                        } else {
-                          for (int i = 0; i < show.length; i++) {
-                            show[i] = false;
-                          }
-                          show[index] = !show[index];
-                        }
-                      });
-                    },
-                    title: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                  child: Card(
+                    color: Colors.blueGrey[100],
+                    child: ExpansionTile(
+                      title: Text("($type) $name"),
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              "(${workoutInApp.exercises?[index].type}) ${workoutInApp.exercises![index].name}",
-                            ),
-                            Icon(show[index]
-                                ? Icons.arrow_drop_up_outlined
-                                : Icons.arrow_drop_down_outlined)
-                          ],
+                        StreamBuilder<QuerySnapshot>(
+                          stream: _db
+                              .collection('workouts')
+                              .doc(widget.workoutId)
+                              .collection('exercises')
+                              .doc(e.id)
+                              .collection('sets')
+                              .orderBy('timestamp', descending: false)
+                              .snapshots(),
+                          builder: (context, setSnapshot) {
+                            if (!setSnapshot.hasData ||
+                                setSnapshot.data!.docs.isEmpty) {
+                              return const Padding(
+                                padding: EdgeInsets.all(8.0),
+                                child: Text("No sets yet."),
+                              );
+                            }
+                            final sets = setSnapshot.data!.docs;
+                            return Column(
+                              children: sets.map((s) {
+                                return ListTile(
+                                  dense: true,
+                                  title: Text(
+                                    "${s['reps']} ${type == 'Bodyweight' ? '' : 'x ${s['weight'].toStringAsFixed(2)} kg'}",
+                                  ),
+                                  trailing: Wrap(
+                                    spacing: 8,
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.edit, size: 20),
+                                        onPressed: () => _showAddOrEditSetSheet(
+                                          e.id,
+                                          name,
+                                          type,
+                                          setId: s.id,
+                                          currentReps: s['reps'],
+                                          currentWeight: s['weight'],
+                                        ),
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.delete,
+                                            color: Colors.red, size: 20),
+                                        onPressed: () => _deleteSet(e.id, s.id),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                            );
+                          },
+                        ),
+                        TextButton.icon(
+                          onPressed: () =>
+                              _showAddOrEditSetSheet(e.id, name, type),
+                          icon: const Icon(Icons.add),
+                          label: const Text("Add Set"),
                         ),
                       ],
                     ),
-                    subtitle: Visibility(
-                      visible: show[index],
-                      child: Column(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(2.0),
-                            decoration: BoxDecoration(
-                                border: Border(
-                                    bottom: BorderSide(
-                              color: Colors.blueGrey,
-                              width: 0.5,
-                            ))),
-                          ),
-                          SizedBox(
-                            height: 5,
-                          ),
-                          Card(
-                            child: ListView.builder(
-                              shrinkWrap: true,
-                              physics: NeverScrollableScrollPhysics(),
-                              itemCount: workoutInApp.exercises![index]
-                                  .sets
-                                  !.length,
-                              itemBuilder: (context, index2) => ListTile(
-                                titleAlignment: ListTileTitleAlignment.center,
-                                dense: true,
-                                visualDensity:
-                                    VisualDensity(horizontal: -4, vertical: -4),
-                                contentPadding:
-                                    EdgeInsets.fromLTRB(10, 0, 0, 0),
-                                subtitle: Text(
-                                    "${workoutInApp.exercises![index].sets![index2].reps}  ${workoutInApp.exercises![index].type == "Bodyweight" ? "" : "x ${workoutInApp.exercises![index].sets![index2].weight.toString()} kg"}"),
-                              ),
-                            ),
-                          ),
-                          Card(
-                            child: TextButton(
-                              onPressed: () => createNewSet(
-                                  workoutInApp
-                                      .exercises![index]
-                                      .name,
-                                  workoutInApp
-                                      .exercises![index]
-                                      .type),
-                              style: TextButton.styleFrom(
-                                  minimumSize: const Size.fromHeight(30)),
-                              child: Icon(Icons.add),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                   ),
-                ),
-              ),
-      ),)
+                );
+              },
+            );
+          },
+        ),
+      ),
     );
   }
 }

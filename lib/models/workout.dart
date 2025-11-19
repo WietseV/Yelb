@@ -29,9 +29,9 @@ class Workout{
 
   Map<String, dynamic> toFirestore() {
     return {
-      if (type != null) "type": type,
-      if (location != null) "location": location,
-      if (date != null) "date": date,
+      "type": type,
+      "location": location,
+      "date": date,
       if (exercises != null) "exercises": exercises,
     };
   }

@@ -22,15 +22,15 @@ class ScaffoldWithBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return  Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topRight,
-              end: Alignment.bottomLeft,
-              colors: [Color(0xFF87DBE6), Color(0xFF1E1E1E)],
-            ),
+    return Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topRight,
+            end: Alignment.bottomLeft,
+            colors: [Color(0xFF87DBE6), Color(0xFF1E1E1E)],
           ),
-            child: child);
+        ),
+        child: child);
   }
 }
 
@@ -44,9 +44,9 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Yelb',
         theme: ThemeData(
-            scaffoldBackgroundColor: const Color(0xFF1E1E1E),
-            useMaterial3: true,
-            appBarTheme: AppBarTheme(
+          scaffoldBackgroundColor: const Color(0xFF1E1E1E),
+          useMaterial3: true,
+          appBarTheme: AppBarTheme(
               color: Color(0xFF1E1E1E),
               iconTheme: IconThemeData(
                 color: Colors.white,
@@ -54,13 +54,13 @@ class MyApp extends StatelessWidget {
               titleTextStyle: TextStyle(
                 color: Colors.white,
                 fontSize: 24,
-              )
-            ),
-            canvasColor: Color(0x87DBE7FF),
-            textTheme: TextTheme(displayLarge: TextStyle(
-              color: Colors.white,
-            )),
-            colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueGrey),
+              )),
+          canvasColor: Color(0x87DBE7FF),
+          textTheme: TextTheme(
+              displayLarge: TextStyle(
+            color: Colors.white,
+          )),
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueGrey),
         ),
         home: LoginPage(),
       ),
