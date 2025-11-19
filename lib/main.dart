@@ -1,11 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:yelb/data/workout_data.dart';
-import 'models/workout.dart';
-import 'pages/homePage.dart';
+import 'package:yelb/pages/login_page.dart';
+import 'package:flutter/services.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
-void main() {
-  runApp(MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  runApp(const MyApp());
+}
+
+class ScaffoldWithBackground extends StatelessWidget {
+  final Widget child;
+
+  ScaffoldWithBackground({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topRight,
+            end: Alignment.bottomLeft,
+            colors: [Color(0xFF87DBE6), Color(0xFF1E1E1E)],
+          ),
+        ),
+        child: child);
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -18,18 +44,26 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Yelb',
         theme: ThemeData(
+          scaffoldBackgroundColor: const Color(0xFF1E1E1E),
           useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(seedColor: Color.fromARGB(255, 16, 78, 34)),
-          primaryTextTheme: TextTheme(
-            displayLarge: TextStyle(
-              color: Colors.green,
-            )
-          )
+          appBarTheme: AppBarTheme(
+              color: Color(0xFF1E1E1E),
+              iconTheme: IconThemeData(
+                color: Colors.white,
+              ),
+              titleTextStyle: TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+              )),
+          canvasColor: Color(0x87DBE7FF),
+          textTheme: TextTheme(
+              displayLarge: TextStyle(
+            color: Colors.white,
+          )),
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueGrey),
         ),
-        home: HomePage(),
+        home: LoginPage(),
       ),
     );
   }
 }
-
-

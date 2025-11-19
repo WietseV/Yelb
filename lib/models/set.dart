@@ -1,4 +1,6 @@
-class Set {
+import 'package:hive/hive.dart';
+
+class Set extends HiveObject {
   double weight;
   int reps;
 

@@ -1,69 +1,76 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:yelb/models/exercise.dart';
-import 'package:yelb/models/workout.dart';
-import 'package:yelb/models/set.dart';
 
 class WorkoutData extends ChangeNotifier {
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  List<Workout> workouts = [
-    Workout(
-      type: "Push A", 
-      date: DateTime.now(), 
-      exercises: [])
-  ];
+  // WORKOUTS -------------------------
 
-  List<Exercise> exercises = [
-    Exercise(
-      name: "Bench Press", 
-      type: "barbell", 
-      sets: [])
-  ];
-
-  List<Workout> getWorkouts() {
-    return workouts;
+  Stream<QuerySnapshot> getWorkoutsStream() {
+    return _db
+        .collection('workouts')
+        .orderBy('date', descending: true)
+        .snapshots();
   }
 
-  List<Exercise> getExercises(){
-    return exercises;
+  Future<void> addWorkout(String type, String location) async {
+    final newWorkout = {
+      'type': type,
+      'location': location,
+      'date': DateTime.now(),
+    };
+    await _db.collection('workouts').add(newWorkout);
   }
 
-  void addWorkout(String type) {
-    workouts.add(Workout(
-      type: type, 
-      date: DateTime.now(), 
-      exercises: []
-    ));
+  // EXERCISES -------------------------
 
-    notifyListeners();
+  Stream<QuerySnapshot> getExercisesStream(String workoutId) {
+    return _db
+        .collection('workouts')
+        .doc(workoutId)
+        .collection('exercises')
+        .orderBy('name')
+        .snapshots();
   }
 
-  void addExercise(String workoutType, String type, String name) {
-    Workout workout = getWorkout(workoutType);
-    workout.exercises.add(Exercise(
-      name: name, 
-      type: type, 
-      sets: []
-    ));
-
-    notifyListeners();
+  Future<void> addExercise(String workoutId, String name, String type) async {
+    final newExercise = {
+      'name': name,
+      'type': type,
+    };
+    await _db
+        .collection('workouts')
+        .doc(workoutId)
+        .collection('exercises')
+        .add(newExercise);
   }
 
-  void addSet(String workoutType, String exerciseName, int reps, double weight){
-    Exercise exercise = getExercise(getWorkout(workoutType), exerciseName);
-    exercise.sets.add(Set(
-      reps: reps,
-      weight: weight,
-    ));
+  // SETS -------------------------
 
-    notifyListeners();
+  Stream<QuerySnapshot> getSetsStream(String workoutId, String exerciseId) {
+    return _db
+        .collection('workouts')
+        .doc(workoutId)
+        .collection('exercises')
+        .doc(exerciseId)
+        .collection('sets')
+        .orderBy('weight', descending: true)
+        .snapshots();
   }
 
-  Workout getWorkout(String type){
-    return workouts.firstWhere((workout) => workout.type == type);
+  Future<void> addSet(
+      String workoutId, String exerciseId, int reps, double weight) async {
+    final newSet = {
+      'reps': reps,
+      'weight': weight,
+      'timestamp': DateTime.now(),
+    };
+    await _db
+        .collection('workouts')
+        .doc(workoutId)
+        .collection('exercises')
+        .doc(exerciseId)
+        .collection('sets')
+        .add(newSet);
   }
-
-  Exercise getExercise(Workout workout, String name){
-    return workout.exercises.firstWhere((exercise) => exercise.name == name);
-  }
-
 }
