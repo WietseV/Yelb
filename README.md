@@ -57,7 +57,7 @@ Usual data looks somehting like this:
             12
             10
     
-The point would be to creat an app that can save a series of excercises, as to easily create workouts with custom excercises and the correct reps/weights/sets and save them.
+The point would be to create an app that can save a series of excercises, as to easily create workouts with custom excercises and the correct reps/weights/sets and save them.
 The db would be local but might be extended to a firestore.
 
 
