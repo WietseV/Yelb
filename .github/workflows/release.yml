@@ -1,0 +1,55 @@
+name: Release Pipeline
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  merge-develop-into-main:
+    name: Merge develop → main
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup Git user
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+
+      - name: Merge develop into main
+        run: |
+          git checkout main
+          git merge origin/develop --no-ff -m "Release ${{ github.event.release.tag_name }}"
+          git push origin main
+
+  build:
+    name: Build Flutter APK
+    needs: merge-develop-into-main
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: latest
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build APK
+        run: flutter build apk --release
+
+      - name: Upload APK to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: build/app/outputs/flutter-apk/app-release.apk
+          tag: ${{ github.event.release.tag_name }}
+          overwrite: true
