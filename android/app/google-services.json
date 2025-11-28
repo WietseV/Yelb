@@ -2,7 +2,7 @@
   "project_info": {
     "project_number": "293433043221",
     "project_id": "yelb-ebfff",
-    "storage_bucket": "yelb-ebfff.appspot.com"
+    "storage_bucket": "yelb-ebfff.firebasestorage.app"
   },
   "client": [
     {
@@ -12,7 +12,20 @@
           "package_name": "com.example.yelb"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "293433043221-7itjvndneqmreb4d1fge1gds1hv5cf2j.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.yelb",
+            "certificate_hash": "37ef7e2c2b066def1e618114f8729476b15e0d9b"
+          }
+        },
+        {
+          "client_id": "293433043221-raq10dpk8s3k289qkef3o97aksn8rtas.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCEwzdzpNzHYCxYQvEaV5wkvEVKERqC1is"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "293433043221-raq10dpk8s3k289qkef3o97aksn8rtas.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "293433043221-1im58s9nfg37emlan34ecd9q8pqvtltp.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.yelb"
+              }
+            }
+          ]
         }
       }
     }
