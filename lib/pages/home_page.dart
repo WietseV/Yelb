@@ -1,267 +1,198 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
-import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../data/default_data.dart';
-import 'workout_page.dart';
-import '../main.dart';
+import 'package:provider/provider.dart';
+import 'package:yelb/theme/app_colors.dart';
 
-class HomePage extends StatefulWidget {
+import '../data/workout_data.dart';
+import '../settings/app_settings.dart';
+import '../widgets/app_gradient_background.dart';
+import '../widgets/app_bottom_nav_bar.dart';
+import '../utils/navigation_utils.dart';
+import '../widgets/workout_list_view.dart';
+
+class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
+  static const EdgeInsets _screenPadding = EdgeInsets.all(20);
+  static const double _bannerHeight = 140;
+  static const String _weekOverviewTitle = 'Last 7 Days';
+  static const String _workoutButtonLabel = 'Let\'s go';
+  static const String _recentWorkoutsTitle = 'Recent Workouts';
+  static const String _noRecentWorkoutsMessage = 'No recent workouts.';
+  static const String _welcomeBannerMessage =
+      'Track your progress and crush your next session.';
+  static const double _borderRadius = 16;
+  static const double _bannerPadding = 20;
+
   @override
-  State<HomePage> createState() => _HomePageState();
-}
+  Widget build(BuildContext context) {
+    final workoutData = context.read<WorkoutData>();
+    final settings = context.watch<AppSettings>();
+    final dateFormat = settings.workoutDateFormat;
 
-class _HomePageState extends State<HomePage> {
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
-
-  WorkoutType? workoutType;
-  WorkoutLocation? workoutLocation;
-
-  final dateFormat = DateFormat('dd-MM-yyyy HH:mm');
-
-  // ADD OR EDIT WORKOUT ----------------------
-  void _showWorkoutDialog(
-      {String? workoutId, String? currentType, String? currentLocation}) {
-    workoutType = currentType != null
-        ? WorkoutType.values.firstWhere((e) => e.type == currentType)
-        : null;
-    workoutLocation = currentLocation != null
-        ? WorkoutLocation.values
-            .firstWhere((e) => e.location == currentLocation)
-        : null;
-
-    final workoutTypeEntries = WorkoutType.values
-        .map((e) => DropdownMenuEntry<WorkoutType>(
-              value: e,
-              label: e.type,
-              enabled: e.type.isNotEmpty,
-            ))
-        .toList();
-
-    final workoutLocationEntries = WorkoutLocation.values
-        .map((e) => DropdownMenuEntry<WorkoutLocation>(
-              value: e,
-              label: e.location,
-              enabled: e.location.isNotEmpty,
-            ))
-        .toList();
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(workoutId == null ? "Add Workout" : "Edit Workout"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
+    return Scaffold(
+      bottomNavigationBar: AppBottomNavBar(
+        current: AppNavDestination.home,
+        onNavigate: (destination) =>
+            NavigationUtils.handleBottomNav(context, destination),
+      ),
+      body: AppGradientBackground(
+        padding: _screenPadding,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            DropdownMenu<WorkoutType>(
-              width: 200,
-              menuHeight: 300,
-              initialSelection: workoutType,
-              label: const Text('Workout Type'),
-              dropdownMenuEntries: workoutTypeEntries,
-              onSelected: (WorkoutType? type) {
-                setState(() => workoutType = type);
-              },
-            ),
+            _buildBanner(context),
             const SizedBox(height: 24),
-            DropdownMenu<WorkoutLocation>(
-              width: 200,
-              initialSelection: workoutLocation,
-              label: const Text('Workout Location'),
-              dropdownMenuEntries: workoutLocationEntries,
-              onSelected: (WorkoutLocation? loc) {
-                setState(() => workoutLocation = loc);
-              },
+            if (settings.showWeekOverview) ...[
+              Text(
+                _weekOverviewTitle,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 12),
+              _WeekOverview(stream: workoutData.getWorkoutsStream()),
+              const SizedBox(height: 16),
+            ],
+            Text(
+              _recentWorkoutsTitle,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Expanded(
+              child: WorkoutListView(
+                stream: workoutData.getWorkoutsStream(),
+                dateFormat: dateFormat,
+                onWorkoutTap: (workout) =>
+                    NavigationUtils.openWorkoutDetails(context, workout),
+                recentWindow: const Duration(days: 7),
+                emptyMessage: _noRecentWorkoutsMessage,
+                cardPadding: const EdgeInsets.only(bottom: 8),
+                cardMargin: EdgeInsets.zero,
+                listPadding: EdgeInsets.zero,
+                groupTag: 'home_workouts',
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => NavigationUtils.handleBottomNav(
+                  context,
+                  AppNavDestination.workouts,
+                ),
+                icon: const Icon(Icons.fitness_center),
+                label: Text(_workoutButtonLabel),
+              ),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text("Cancel"),
+      ),
+    );
+  }
+
+  Widget _buildBanner(BuildContext context) {
+    return Container(
+      height: _bannerHeight,
+      padding: const EdgeInsets.all(_bannerPadding),
+      decoration: BoxDecoration(
+        color: AppColors.secondaryMuted,
+        borderRadius: BorderRadius.circular(_borderRadius),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Welcome Back',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ),
+              const Icon(Icons.fitness_center,
+                  color: AppColors.primary, size: 40),
+            ],
           ),
-          TextButton(
-            onPressed: () async {
-              if (workoutType != null && workoutLocation != null) {
-                if (workoutId == null) {
-                  await _db.collection('workouts').add({
-                    'type': workoutType!.type,
-                    'location': workoutLocation!.location,
-                    'date': DateTime.now(),
-                  });
-                } else {
-                  await _db.collection('workouts').doc(workoutId).update({
-                    'type': workoutType!.type,
-                    'location': workoutLocation!.location,
-                  });
-                }
-                Navigator.pop(ctx);
-              }
-            },
-            child: const Text("Save"),
+          const Spacer(),
+          Text(
+            _welcomeBannerMessage,
+            style: Theme.of(context).textTheme.bodyMedium,
           ),
         ],
       ),
     );
   }
+}
 
-  // DELETE WORKOUT ----------------------
+class _WeekOverview extends StatelessWidget {
+  final Stream<QuerySnapshot> stream;
 
-  void _deleteWorkout(String workoutId) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text("Delete Workout"),
-        content: const Text(
-            "Are you sure you want to delete this workout and all its data?"),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx), child: const Text("Cancel")),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              final exercises = await _db
-                  .collection('workouts')
-                  .doc(workoutId)
-                  .collection('exercises')
-                  .get();
-              for (var ex in exercises.docs) {
-                final sets = await _db
-                    .collection('workouts')
-                    .doc(workoutId)
-                    .collection('exercises')
-                    .doc(ex.id)
-                    .collection('sets')
-                    .get();
-                for (var s in sets.docs) {
-                  await s.reference.delete();
-                }
-                await ex.reference.delete();
-              }
-              await _db.collection('workouts').doc(workoutId).delete();
-            },
-            child: const Text("Delete", style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-  }
+  static const double _circleSize = 48;
 
-  // BUILD UI ----------------------
+  const _WeekOverview({required this.stream});
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Workouts'),
-        centerTitle: true,
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showWorkoutDialog(),
-        child: const Icon(Icons.add),
-      ),
-      body: ScaffoldWithBackground(
-        child: StreamBuilder<QuerySnapshot>(
-          stream: _db
-              .collection('workouts')
-              .orderBy('date', descending: true)
-              .snapshots(),
-          builder: (context, snapshot) {
-            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-              return const Center(child: Text("No workouts yet."));
-            }
+    return StreamBuilder<QuerySnapshot>(
+      stream: stream,
+      builder: (context, snapshot) {
+        final docs = snapshot.data?.docs ?? [];
+        final workoutDays = docs
+            .map((doc) => (doc['date'] as Timestamp).toDate())
+            .map((date) => DateTime(date.year, date.month, date.day))
+            .toSet();
 
-            final workouts = snapshot.data!.docs;
+        final now = DateTime.now();
+        final days = List.generate(7, (index) {
+          final day = now.subtract(Duration(days: 6 - index));
+          return DateTime(day.year, day.month, day.day);
+        });
 
-            return ListView.builder(
-              itemCount: workouts.length,
-              itemBuilder: (context, index) {
-                final w = workouts[index];
-                final date = (w['date'] as Timestamp).toDate();
-
-                return Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 8.0, vertical: 4.0),
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      const double actionWidth = 108.0;
-                      final double ratio = actionWidth / constraints.maxWidth;
-                      return Slidable(
-                        key: ValueKey(w.id),
-                        endActionPane: ActionPane(
-                          motion: const ScrollMotion(),
-                          extentRatio: ratio.clamp(0.2, 0.35),
-                          children: [
-                            Padding(
-                              padding:
-                                  const EdgeInsets.only(right: 4), // 4 px space
-                              child: ClipOval(
-                                child: Material(
-                                  color: Colors.blueGrey.shade700,
-                                  child: InkWell(
-                                    onTap: () => _showWorkoutDialog(
-                                      workoutId: w.id,
-                                      currentType: w['type'],
-                                      currentLocation: w['location'],
-                                    ),
-                                    child: const SizedBox(
-                                      width: 52,
-                                      height: 52,
-                                      child: Icon(Icons.edit,
-                                          color: Colors.white, size: 24),
-                                    ),
-                                  ),
-                                ),
-                              ),
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: days.map((day) {
+            final hasWorkout = workoutDays.any((d) => _isSameDay(d, day));
+            return Expanded(
+              child: Column(
+                children: [
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    width: _circleSize,
+                    height: _circleSize,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: hasWorkout
+                            ? AppColors.confirmed
+                            : AppColors.primaryMuted,
+                        width: 2,
+                      ),
+                    ),
+                    child: Center(
+                      child: hasWorkout
+                          ? Icon(Icons.check_outlined,
+                              color: AppColors.confirmed)
+                          : Text(
+                              '${day.day}',
+                              style: Theme.of(context).textTheme.bodyMedium,
                             ),
-                            ClipOval(
-                              child: Material(
-                                color: Colors.red.shade400,
-                                child: InkWell(
-                                  onTap: () => _deleteWorkout(w.id),
-                                  child: const SizedBox(
-                                    width: 52,
-                                    height: 52,
-                                    child: Icon(Icons.delete,
-                                        color: Colors.white, size: 24),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        child: Card(
-                          color: Colors.blueGrey[100],
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 6), // slightly reduced height
-                            title: Text(w['type']),
-                            subtitle: Text(
-                                "${w['location']} • ${dateFormat.format(date)}"),
-                            trailing: const Icon(Icons.arrow_forward_ios),
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => WorkoutPage(
-                                  workoutId: w.id,
-                                  workoutType: w['type'],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    },
+                    ),
                   ),
-                );
-              },
+                  const SizedBox(height: 4),
+                  Text(
+                    DateFormat('EEE').format(day),
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
             );
-          },
-        ),
-      ),
+          }).toList(),
+        );
+      },
     );
+  }
+
+  bool _isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 }

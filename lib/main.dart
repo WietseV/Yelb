@@ -1,37 +1,38 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:yelb/data/workout_data.dart';
-import 'package:yelb/pages/login_page.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
+import 'data/workout_data.dart';
+import 'pages/home_page.dart';
+import 'pages/login_page.dart';
+import 'settings/app_settings.dart';
+
 import 'firebase_options.dart';
+import 'theme/app_theme.dart';
+import 'widgets/app_splash_screen.dart';
+
+Future<void> _initializeFirebase() async {
+  try {
+    Firebase.app();
+  } on FirebaseException {
+    try {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    } on FirebaseException catch (e) {
+      if (e.code != 'duplicate-app') rethrow;
+      Firebase.app();
+    }
+  }
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  await _initializeFirebase();
   runApp(const MyApp());
-}
-
-class ScaffoldWithBackground extends StatelessWidget {
-  final Widget child;
-
-  ScaffoldWithBackground({required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topRight,
-            end: Alignment.bottomLeft,
-            colors: [Color(0xFF87DBE6), Color(0xFF1E1E1E)],
-          ),
-        ),
-        child: child);
-  }
 }
 
 class MyApp extends StatelessWidget {
@@ -39,31 +40,39 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) => WorkoutData(),
-      child: MaterialApp(
-        title: 'Yelb',
-        theme: ThemeData(
-          scaffoldBackgroundColor: const Color(0xFF1E1E1E),
-          useMaterial3: true,
-          appBarTheme: AppBarTheme(
-              color: Color(0xFF1E1E1E),
-              iconTheme: IconThemeData(
-                color: Colors.white,
-              ),
-              titleTextStyle: TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-              )),
-          canvasColor: Color(0x87DBE7FF),
-          textTheme: TextTheme(
-              displayLarge: TextStyle(
-            color: Colors.white,
-          )),
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueGrey),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AppSettings()),
+        ChangeNotifierProvider(create: (_) => WorkoutData()),
+      ],
+      child: Consumer<AppSettings>(
+        builder: (context, settings, _) => MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'Yelb',
+          theme: AppTheme.light(settings.accentColor),
+          home: const AuthGate(),
         ),
-        home: LoginPage(),
       ),
+    );
+  }
+}
+
+class AuthGate extends StatelessWidget {
+  const AuthGate({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(body: AppSplashScreen());
+        }
+        if (snapshot.hasData) {
+          return const HomePage();
+        }
+        return const LoginPage();
+      },
     );
   }
 }
