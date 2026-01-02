@@ -14,18 +14,10 @@ import 'theme/app_theme.dart';
 import 'widgets/app_splash_screen.dart';
 
 Future<void> _initializeFirebase() async {
-  try {
-    Firebase.app();
-  } on FirebaseException {
-    try {
-      await Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform,
-      );
-    } on FirebaseException catch (e) {
-      if (e.code != 'duplicate-app') rethrow;
-      Firebase.app();
-    }
-  }
+  if (Firebase.apps.isNotEmpty) return;
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 }
 
 void main() async {
